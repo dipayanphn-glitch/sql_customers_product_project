@@ -1,0 +1,67 @@
+-- create view gold_report_customers as 
+-- Customer Report
+-- with base_query as(
+-- select
+-- f.order_number,
+-- f.product_key,
+-- f.order_date,
+-- f.sales_amount,
+-- f.quantity,
+-- c.customer_key,
+-- c.customer_number,
+-- concat(c.first_name,"",c.last_name) as customer_name,
+-- TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) AS age
+-- from gold_fact_sales f
+-- left join gold_dim_customers c 
+--  on c.customer_key = f.customer_key
+-- where order_date is not null)
+
+-- , customer_aggregation as (
+-- select
+-- customer_key,
+-- customer_number,
+-- customer_name,
+--  age,
+--  count(distinct order_number) as total_orders,
+--  sum(sales_amount) as total_sales,
+--  sum(quantity) as total_quantity,
+--  count(distinct product_key) as total_products,
+--  max(order_date) as last_order,
+--  timestampdiff(month, min(order_date) , max(order_date)) as lifespan
+--  from base_query
+--  group by 
+--  customer_key,
+-- customer_number,
+-- customer_name,
+--  age)
+--  
+--  select
+--  customer_key,
+-- customer_number,
+-- customer_name,
+-- age,
+--  case when age< 20 then "Under 20"
+--        when age between  20 and 29 then "20-29"
+--            when age between  30 and 39 then "30-39"
+-- 		 when age between  20 and 29 then "40-49"
+--          else "50 and above"
+--          end as age_group,
+--  case when lifespan >= 12 and total_sales>5000 then "VIP"
+--       when lifespan >= 12 and total_sales <= 5000 then "Regular"
+-- 	  else "New"
+--   end as customer_segment,    
+--  total_orders,
+--   total_sales,
+--  total_quantity,
+--  total_products,
+--  last_order,
+-- TIMESTAMPDIFF(MONTH, last_order, CURDATE()) AS recency,
+-- -- compute average order value 
+-- case when total_orders = 0 then "0"
+-- else round(total_sales/ total_orders, 2 )end  AS avg_order_value, 
+--  lifespan,
+--  -- compute avg monthly spending
+--  case when lifespan = 0 then total_sales
+--  else round(total_sales/ lifespan,2)
+--  end as avg_monthly_spend
+--  from customer_aggregation
